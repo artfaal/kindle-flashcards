@@ -22,39 +22,33 @@ except ImportError as e:
     print("   pip install openai python-dotenv")
     sys.exit(1)
 
-# Загружаем переменные окружения
-load_dotenv()
+# Загружаем переменные окружения с переопределением системных
+load_dotenv(override=True)
 
 # ============================================================================
 # ГЛАВНЫЙ ПРОМПТ ДЛЯ ГЕНЕРАЦИИ КАРТОЧЕК
 # ============================================================================
 SYSTEM_PROMPT = """You are generating flashcards for a Russian speaker learning English.
 
-OUTPUT FORMAT (one card per line, front % back, @ symbol between cards):
-<h3><strong>word</strong> <small>/pronunciation/</small></h3><p><em>"Sentence with _____ blank."</em></p>%<h4>🇷🇺 Перевод:</h4><p>перевод</p><h4>🇬🇧 Definition:</h4><p><em>short definition</em></p><h4>📝 Grammar:</h4><p>part of speech • <strong>level</strong> • ⭐ importance/10</p><h4>🔗 Collocations:</h4><ul><li>phrase1</li><li>phrase2</li><li>phrase3</li></ul><h4>↔️ Syn/Ant:</h4><p>Syn: synonyms<br>Ant: <s>antonyms</s></p><h4>📖 Example:</h4><p><em>"Full sentence example."</em></p><h4>💡 Memory tip:</h4><p><em>mnemonic association</em></p>
+OUTPUT FORMAT (front % back):
+<h3><b>word</b> <small>/pronunciation/</small></h3><p><i>"Original sentence with _____ blank."</i></p>%🇷🇺 <b>перевод</b><br>🇬🇧 <i>short definition</i><br>📝 part of speech • <b>level</b> • ⭐ importance/10<br>🔗 common collocation<br>✅ synonym<br>❌ <s>antonym</s><br>📖 <i>"Simple sentence example."</i><br>💡 <i>мнемоническая ассоциация на русском</i>
 
 RULES:
-- Front side: word with pronunciation, context sentence with blank (no question)
-- Back side: complete information with minimal HTML formatting
-- Translation: CONTEXT-APPROPRIATE Russian translation first, then other meanings if relevant
-- Definition: B1 level English, max 15 words, NEVER use the word itself in definition
-- Context: Use the original context provided, or create a simplified version if too complex. Replace the target word with _____
-- POS/CEFR/IPA: part of speech • CEFR level (A1-C2) • IPA pronunciation (BrE, add AmE if different)
-- Importance scale:
-  * 9-10 = top 500 words (be, have, go, make, think, get, see)
-  * 7-8 = top 3000 words (often, explain, create, remember)  
-  * 5-6 = common everyday words (coax, borough, persuade)
-  * 3-4 = specialized but known (glower, stencil, squirm)
-  * 1-2 = rare, technical, archaic
-- Collocations: 2-3 most common phrases/collocations with the word
-- Syn/Ant: 1-2 synonyms, 1-2 antonyms
-- Memory tip: create a mnemonic association with Russian sounds, words, or visual images
-- Use bold only for: word, level, avoid excessive formatting
-- Always add @ symbol on separate line between cards
-- If original context is provided, analyze it to determine the most appropriate translation for that specific usage
-- If original context is too long or complex, simplify it while preserving the meaning and the target word's usage
+- Front: word + pronunciation + EXACT original sentence with word replaced by _____
+- Back: all info in single lines, no lists or complex formatting
+- Translation: context-appropriate Russian translation first
+- Definition: B1 level English, max 15 words, never use the word itself
+- Original context: use EXACT original sentence provided, no length limit
+- Grammar: part of speech • CEFR level • importance 1-10
+- Collocations: ONE most common phrase with the word
+- Synonyms/Antonyms: separate lines, one each
+- Example: NEW simple sentence (not the original one)
+- Memory tip: Russian mnemonic association
+- Use only short HTML tags: b, i, s, br
+- Double newline between cards
+- Importance scale: * 9-10 = top 500 words (be, have, go, make, think, get, see) * 7-8 = top 3000 words (often, explain, create, remember) * 5-6 = common everyday words (coax, borough, persuade) * 3-4 = specialized but known (glower, stencil, squirm) * 1-2 = rare, technical, archaic
 
-OUTPUT ONLY THE CARDS. No explanations, no comments, no extra formatting."""
+OUTPUT ONLY THE CARDS."""
 # ============================================================================
 
 
@@ -81,7 +75,7 @@ class KindleCardsGenerator:
             sys.exit(1)
 
         self.client = OpenAI(api_key=api_key)
-        
+
         # Настройки модели из .env
         self.model = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
         self.temperature = float(os.getenv('OPENAI_TEMPERATURE', '0.3'))
@@ -217,12 +211,12 @@ class KindleCardsGenerator:
         for item in words_batch:
             word = item['clean_word']
             original_context = item.get('usage', '').strip()
-            
+
             if original_context:
                 words_list.append(f"- {word}\n  Original context: \"{original_context}\"")
             else:
                 words_list.append(f"- {word}")
-        
+
         words_text = "\n\n".join(words_list)
         user_prompt = f"Generate flashcards for these words with their original contexts:\n\n{words_text}"
 
@@ -235,7 +229,7 @@ class KindleCardsGenerator:
                     {"role": "user", "content": user_prompt}
                 ]
             }
-            
+
             # Для gpt-5 используем max_completion_tokens и убираем temperature
             if self.model.startswith('gpt-5'):
                 api_params["max_completion_tokens"] = self.max_tokens
@@ -243,7 +237,7 @@ class KindleCardsGenerator:
             else:
                 api_params["max_tokens"] = self.max_tokens
                 api_params["temperature"] = self.temperature
-            
+
             response = self.client.chat.completions.create(**api_params)
 
             # Статистика токенов
@@ -265,7 +259,7 @@ class KindleCardsGenerator:
         if test_mode:
             print("🧪 ТЕСТОВЫЙ РЕЖИМ")
             print("=" * 70)
-        
+
         self.print_header()
 
         # Поиск базы данных
@@ -345,7 +339,7 @@ class KindleCardsGenerator:
 
         # Сохраняем карточки
         with open(filepath, 'w', encoding='utf-8') as f:
-            content = "\n@\n".join(all_cards)
+            content = "\n\n".join(all_cards)
             f.write(content)
 
         print(f"✓ Создан файл: {filename}")
@@ -384,9 +378,9 @@ class KindleCardsGenerator:
 
 if __name__ == '__main__':
     import sys
-    
+
     generator = KindleCardsGenerator()
-    
+
     # Проверяем аргумент test
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
         generator.run(test_mode=True)
