@@ -16,7 +16,10 @@
 Каждая карточка содержит:
 - **Перевод** на русский (1-3 основных значения)
 - **Определение** на английском (уровень B1, без использования самого слова)
+- **POS/CEFR/IPA** - часть речи, уровень сложности, произношение
 - **Важность** (1-10, где 10 - топ-500 слов)
+- **Коллокации** - 2-3 устойчивых сочетания
+- **Syn/Ant** - синонимы и антонимы
 - **Словоформа** (базовая форма или происхождение)
 - **Пример предложения** (простая структура, до 8 слов)
 
@@ -85,10 +88,19 @@ python generate_cards.py
 | Параметр | Описание | По умолчанию |
 |----------|----------|--------------|
 | `OPENAI_API_KEY` | API ключ OpenAI | обязательно |
-| `OPENAI_MODEL` | Модель для генерации | `gpt-4o-mini` |
+| `OPENAI_MODEL` | Модель для генерации | `gpt-5` |
 | `OPENAI_TEMPERATURE` | Температура (0-1) | `0.3` |
 | `OPENAI_MAX_TOKENS` | Максимум токенов | `3000` |
 | `BATCH_SIZE` | Размер батча слов | `40` |
+
+## Доступные модели OpenAI
+
+- `gpt-5`
+- `gpt-5-mini`
+- `gpt-5-nano`
+- `gpt-4.1`
+- `gpt-4.1-mini`
+- `gpt-4.1-nano`
 
 ## Как это работает
 
@@ -107,7 +119,7 @@ kindle_cards_output/
 
 Файлы готовы для импорта в noji.io в формате:
 ```
-word%Translation (RU): перевод<br><br>Definition (EN): определение<br><br>Importance (1–10): 7<br><br>Formed from: базовая форма<br><br>Simple sentence: пример предложения
+coax%Translation (RU): уговаривать; заманивать<br><br>Definition (EN): To gently persuade someone to do something.<br><br>POS/CEFR/IPA: verb • B2 • /kəʊks/ (AmE /koʊks/)<br><br>Importance (1–10): 6<br><br>Collocations: coax into doing; coax out of; coax a smile<br><br>Syn/Ant: persuade, cajole / deter<br><br>Formed from: base form<br><br>Simple sentence: She coaxed him into joining us.
 ```
 
 ## Стоимость использования

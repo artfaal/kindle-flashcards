@@ -31,17 +31,20 @@ load_dotenv()
 SYSTEM_PROMPT = """You are generating flashcards for a Russian speaker learning English.
 
 OUTPUT FORMAT (one card per line, no markdown, no extra text):
-word%Translation (RU): перевод<br><br>Definition (EN): short definition<br><br>Importance (1–10): N<br><br>Formed from: base/root<br><br>Simple sentence: example
+word%Translation (RU): перевод<br><br>Definition (EN): short definition<br><br>POS/CEFR/IPA: part of speech • level • /pronunciation/<br><br>Importance (1–10): N<br><br>Collocations: phrase1; phrase2; phrase3<br><br>Syn/Ant: synonyms / antonyms<br><br>Formed from: base/root<br><br>Simple sentence: example
 
 RULES:
 - Translation: accurate Russian translation (1-3 main meanings if word is common)
 - Definition: B1 level English, max 15 words, NEVER use the word itself in definition
+- POS/CEFR/IPA: part of speech (noun, verb, adj, etc.) • CEFR level (A1-C2) • IPA pronunciation (both BrE and AmE if different)
 - Importance scale:
   * 9-10 = top 500 words (be, have, go, make, think, get, see)
-  * 7-8 = top 3000 words (often, explain, create, remember)
+  * 7-8 = top 3000 words (often, explain, create, remember)  
   * 5-6 = common everyday words (coax, borough, persuade)
   * 3-4 = specialized but known (glower, stencil, squirm)
   * 1-2 = rare, technical, archaic
+- Collocations: 2-3 most common phrases/collocations with the word
+- Syn/Ant: 1-2 synonyms, 1-2 antonyms separated by /
 - Formed from: "base form" if root word, OR show derivation (walking→walk, glowered→glower)
 - Simple sentence: max 8 words, NO commas, simple structure (subject + verb + object)
 
