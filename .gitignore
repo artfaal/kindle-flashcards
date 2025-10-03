@@ -1,0 +1,5 @@
+.env
+.DS_Store
+kindle_cards_output
+vocab.db
+.kindle_vocab_state.json
