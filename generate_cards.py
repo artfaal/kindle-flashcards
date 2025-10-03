@@ -30,13 +30,16 @@ load_dotenv()
 # ============================================================================
 SYSTEM_PROMPT = """You are generating flashcards for a Russian speaker learning English.
 
-OUTPUT FORMAT (one card per line, no markdown, no extra text):
-word%Translation (RU): перевод<br><br>Definition (EN): short definition<br><br>POS/CEFR/IPA: part of speech • level • /pronunciation/<br><br>Importance (1–10): N<br><br>Collocations: phrase1; phrase2; phrase3<br><br>Syn/Ant: synonyms / antonyms<br><br>Formed from: base/root<br><br>Simple sentence: example
+OUTPUT FORMAT (one card per line, front % back, two empty lines between cards):
+<h3><strong>word</strong> <small>/pronunciation/</small></h3><p><em>"Sentence with _____ blank."</em></p>%<h4>🇷🇺 Перевод:</h4><p>перевод</p><h4>🇬🇧 Definition:</h4><p><em>short definition</em></p><h4>📝 Grammar:</h4><p>part of speech • <strong>level</strong> • ⭐ importance/10</p><h4>🔗 Collocations:</h4><ul><li>phrase1</li><li>phrase2</li><li>phrase3</li></ul><h4>↔️ Syn/Ant:</h4><p>Syn: synonyms<br>Ant: <s>antonyms</s></p><h4>📖 Example:</h4><p><em>"Full sentence example."</em></p><h4>💡 Memory tip:</h4><p><em>mnemonic association</em></p>
 
 RULES:
+- Front side: word with pronunciation, context sentence with blank (no question)
+- Back side: complete information with minimal HTML formatting
 - Translation: accurate Russian translation (1-3 main meanings if word is common)
 - Definition: B1 level English, max 15 words, NEVER use the word itself in definition
-- POS/CEFR/IPA: part of speech (noun, verb, adj, etc.) • CEFR level (A1-C2) • IPA pronunciation (both BrE and AmE if different)
+- Context: create a simple sentence from the original usage, replace the word with _____
+- POS/CEFR/IPA: part of speech • CEFR level (A1-C2) • IPA pronunciation (BrE, add AmE if different)
 - Importance scale:
   * 9-10 = top 500 words (be, have, go, make, think, get, see)
   * 7-8 = top 3000 words (often, explain, create, remember)  
@@ -44,11 +47,12 @@ RULES:
   * 3-4 = specialized but known (glower, stencil, squirm)
   * 1-2 = rare, technical, archaic
 - Collocations: 2-3 most common phrases/collocations with the word
-- Syn/Ant: 1-2 synonyms, 1-2 antonyms separated by /
-- Formed from: "base form" if root word, OR show derivation (walking→walk, glowered→glower)
-- Simple sentence: max 8 words, NO commas, simple structure (subject + verb + object)
+- Syn/Ant: 1-2 synonyms, 1-2 antonyms
+- Memory tip: create a mnemonic association with Russian sounds, words, or visual images
+- Use bold only for: word, level, avoid excessive formatting
+- Always add TWO empty lines between cards
 
-OUTPUT ONLY THE CARDS. No explanations, no comments, no markdown."""
+OUTPUT ONLY THE CARDS. No explanations, no comments, no extra formatting."""
 # ============================================================================
 
 

@@ -13,15 +13,21 @@
 
 ## Формат карточек
 
-Каждая карточка содержит:
+Карточки создаются в формате **Front/Back** для оптимального изучения:
+
+### **Front (лицевая сторона):**
+- **Слово** с произношением
+- **Контекст** из книги с пропуском
+- **Вопрос** для активного вспоминания
+
+### **Back (обратная сторона):**
 - **Перевод** на русский (1-3 основных значения)
-- **Определение** на английском (уровень B1, без использования самого слова)
-- **POS/CEFR/IPA** - часть речи, уровень сложности, произношение
-- **Важность** (1-10, где 10 - топ-500 слов)
+- **Определение** на английском (уровень B1)
+- **Грамматика** - часть речи, уровень CEFR, важность
 - **Коллокации** - 2-3 устойчивых сочетания
-- **Syn/Ant** - синонимы и антонимы
-- **Словоформа** (базовая форма или происхождение)
-- **Пример предложения** (простая структура, до 8 слов)
+- **Синонимы/Антонимы** с выделением
+- **Пример** предложения
+- **Мнемоника** для запоминания
 
 ## Установка и запуск
 
@@ -117,9 +123,10 @@ kindle_cards_output/
 └── noji_cards_20241003_142530.txt
 ```
 
-Файлы готовы для импорта в noji.io в формате:
-```
-coax%Translation (RU): уговаривать; заманивать<br><br>Definition (EN): To gently persuade someone to do something.<br><br>POS/CEFR/IPA: verb • B2 • /kəʊks/ (AmE /koʊks/)<br><br>Importance (1–10): 6<br><br>Collocations: coax into doing; coax out of; coax a smile<br><br>Syn/Ant: persuade, cajole / deter<br><br>Formed from: base form<br><br>Simple sentence: She coaxed him into joining us.
+Файлы готовы для импорта в noji.io в формате Front/Back (разделение через TAB):
+
+```html
+<h3><strong>coax</strong> <small>/kəʊks/</small></h3><p><em>"She _____ him into joining us."</em></p>%<h4>🇷🇺 Перевод:</h4><p>уговаривать; заманивать</p><h4>🇬🇧 Definition:</h4><p><em>To gently persuade someone to do something</em></p><h4>📝 Grammar:</h4><p>verb • <strong>B2</strong> • ⭐ 6/10</p><h4>🔗 Collocations:</h4><ul><li>coax into doing</li><li>coax out of</li><li>coax a smile</li></ul><h4>↔️ Syn/Ant:</h4><p>Syn: persuade, cajole<br>Ant: <s>deter</s></p><h4>📖 Example:</h4><p><em>"She coaxed him into joining us."</em></p><h4>💡 Memory tip:</h4><p><em>COAks ≈ уКОАксивает (звуковое сходство)</em></p>
 ```
 
 ## Стоимость использования
