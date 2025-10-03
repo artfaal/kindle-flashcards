@@ -30,15 +30,15 @@ load_dotenv()
 # ============================================================================
 SYSTEM_PROMPT = """You are generating flashcards for a Russian speaker learning English.
 
-OUTPUT FORMAT (one card per line, front % back, two empty lines between cards):
+OUTPUT FORMAT (one card per line, front % back, @ symbol between cards):
 <h3><strong>word</strong> <small>/pronunciation/</small></h3><p><em>"Sentence with _____ blank."</em></p>%<h4>🇷🇺 Перевод:</h4><p>перевод</p><h4>🇬🇧 Definition:</h4><p><em>short definition</em></p><h4>📝 Grammar:</h4><p>part of speech • <strong>level</strong> • ⭐ importance/10</p><h4>🔗 Collocations:</h4><ul><li>phrase1</li><li>phrase2</li><li>phrase3</li></ul><h4>↔️ Syn/Ant:</h4><p>Syn: synonyms<br>Ant: <s>antonyms</s></p><h4>📖 Example:</h4><p><em>"Full sentence example."</em></p><h4>💡 Memory tip:</h4><p><em>mnemonic association</em></p>
 
 RULES:
 - Front side: word with pronunciation, context sentence with blank (no question)
 - Back side: complete information with minimal HTML formatting
-- Translation: accurate Russian translation (1-3 main meanings if word is common)
+- Translation: CONTEXT-APPROPRIATE Russian translation first, then other meanings if relevant
 - Definition: B1 level English, max 15 words, NEVER use the word itself in definition
-- Context: create a simple sentence from the original usage, replace the word with _____
+- Context: Use the original context provided, or create a simplified version if too complex. Replace the target word with _____
 - POS/CEFR/IPA: part of speech • CEFR level (A1-C2) • IPA pronunciation (BrE, add AmE if different)
 - Importance scale:
   * 9-10 = top 500 words (be, have, go, make, think, get, see)
@@ -50,7 +50,9 @@ RULES:
 - Syn/Ant: 1-2 synonyms, 1-2 antonyms
 - Memory tip: create a mnemonic association with Russian sounds, words, or visual images
 - Use bold only for: word, level, avoid excessive formatting
-- Always add TWO empty lines between cards
+- Always add @ symbol on separate line between cards
+- If original context is provided, analyze it to determine the most appropriate translation for that specific usage
+- If original context is too long or complex, simplify it while preserving the meaning and the target word's usage
 
 OUTPUT ONLY THE CARDS. No explanations, no comments, no extra formatting."""
 # ============================================================================
@@ -85,6 +87,7 @@ class KindleCardsGenerator:
         self.temperature = float(os.getenv('OPENAI_TEMPERATURE', '0.3'))
         self.max_tokens = int(os.getenv('OPENAI_MAX_TOKENS', '3000'))
         self.batch_size = int(os.getenv('BATCH_SIZE', '40'))
+        self.test_limit = int(os.getenv('TEST_LIMIT', '5'))
         self.stats = {
             'api_calls': 0,
             'total_tokens': 0,
@@ -209,21 +212,39 @@ class KindleCardsGenerator:
 
     def generate_cards_batch(self, words_batch):
         """Генерирует карточки для батча через OpenAI API"""
-        # Формируем список слов для промпта
-        words_list = "\n".join([f"- {item['clean_word']}" for item in words_batch])
-
-        user_prompt = f"Generate flashcards for these words:\n\n{words_list}"
+        # Формируем список слов с оригинальными контекстами
+        words_list = []
+        for item in words_batch:
+            word = item['clean_word']
+            original_context = item.get('usage', '').strip()
+            
+            if original_context:
+                words_list.append(f"- {word}\n  Original context: \"{original_context}\"")
+            else:
+                words_list.append(f"- {word}")
+        
+        words_text = "\n\n".join(words_list)
+        user_prompt = f"Generate flashcards for these words with their original contexts:\n\n{words_text}"
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            # Используем правильный параметр для новых моделей
+            api_params = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt}
-                ],
-                temperature=self.temperature,
-                max_tokens=self.max_tokens
-            )
+                ]
+            }
+            
+            # Для gpt-5 используем max_completion_tokens и убираем temperature
+            if self.model.startswith('gpt-5'):
+                api_params["max_completion_tokens"] = self.max_tokens
+                # temperature не поддерживается для gpt-5
+            else:
+                api_params["max_tokens"] = self.max_tokens
+                api_params["temperature"] = self.temperature
+            
+            response = self.client.chat.completions.create(**api_params)
 
             # Статистика токенов
             self.stats['api_calls'] += 1
@@ -236,11 +257,15 @@ class KindleCardsGenerator:
             return cards_text
 
         except Exception as e:
-            print(f"\n❌ Ошибка API: {e}")
+            print(f"❌ Ошибка API: {e}")
             return None
 
-    def run(self):
+    def run(self, test_mode=False):
         """Основная функция"""
+        if test_mode:
+            print("🧪 ТЕСТОВЫЙ РЕЖИМ")
+            print("=" * 70)
+        
         self.print_header()
 
         # Поиск базы данных
@@ -266,6 +291,11 @@ class KindleCardsGenerator:
         if not filtered_words:
             print("✅ Все новые слова уже обработаны")
             return
+
+        # Ограничение для тестового режима
+        if test_mode:
+            filtered_words = filtered_words[:self.test_limit]
+            print(f"🧪 Тестовый режим: ограничение до {self.test_limit} слов")
 
         print()
         print(f"🎴 Генерация карточек для {len(filtered_words)} слов...")
@@ -315,16 +345,19 @@ class KindleCardsGenerator:
 
         # Сохраняем карточки
         with open(filepath, 'w', encoding='utf-8') as f:
-            content = "\n\n\n".join(all_cards)
+            content = "\n@\n".join(all_cards)
             f.write(content)
 
         print(f"✓ Создан файл: {filename}")
 
-        # Обновляем state
-        state['last_processed_timestamp'] = max_timestamp
-        state['processed_words'].extend(processed_words)
-        state['processed_words'] = list(set(state['processed_words']))  # Удаляем дубликаты
-        self.save_state(state)
+        # Обновляем state (только если не тестовый режим)
+        if not test_mode:
+            state['last_processed_timestamp'] = max_timestamp
+            state['processed_words'].extend(processed_words)
+            state['processed_words'] = list(set(state['processed_words']))  # Удаляем дубликаты
+            self.save_state(state)
+        else:
+            print("🧪 Тестовый режим: состояние не сохранено")
 
         # Считаем стоимость (GPT-4o-mini)
         # Input: $0.15 / 1M tokens
@@ -350,5 +383,12 @@ class KindleCardsGenerator:
 
 
 if __name__ == '__main__':
+    import sys
+    
     generator = KindleCardsGenerator()
-    generator.run()
+    
+    # Проверяем аргумент test
+    if len(sys.argv) > 1 and sys.argv[1] == 'test':
+        generator.run(test_mode=True)
+    else:
+        generator.run()
