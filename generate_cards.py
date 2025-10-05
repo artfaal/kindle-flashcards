@@ -31,7 +31,7 @@ load_dotenv(override=True)
 SYSTEM_PROMPT = """You are generating flashcards for a Russian speaker learning English.
 
 OUTPUT FORMAT (front % back):
-<h3><b>word</b> <small>/pronunciation/</small></h3><p><i>"Original sentence with _____ blank."</i></p>%🇷🇺 <b>перевод / другой вариант перевода / ещё вариант перевода</b><br>🇬🇧 <i>short definition</i><br>📝 part of speech • <b>level</b> • ⭐ importance/10<br>🔗 common collocation<br>✅ synonym<br>❌ antonym<br>📖 <i>"Simple sentence example."</i><br>💡 <i>мнемоническая ассоциация на русском</i>
+<h3><b>word</b> <small>/pronunciation/</small></h3><p><i>"Original sentence with _____ blank."</i></p>%🇷🇺 <b>перевод / другой вариант перевода / ещё вариант перевода</b><br>🇬🇧 <i>short definition</i><br>📝 part of speech • <b>level</b> • ⭐ importance/10<br>🏠 <b>base form</b> <i>("example with base form")</i><br>🔗 common collocation<br>✅ synonym<br>❌ antonym<br>📖 <i>"Simple sentence example."</i><br>💡 <i>мнемоническая ассоциация на русском</i>
 
 CRITICAL FORMATTING RULES:
 - CARD SEPARATION: Use exactly TWO newlines (empty line) between cards, NEVER use <br> tags for card separation
@@ -41,6 +41,7 @@ CRITICAL FORMATTING RULES:
 - Definition: B1 level English, max 15 words, never use the word itself
 - Original context: use EXACT original sentence provided, no length limit
 - Grammar: part of speech • CEFR level • importance 1-10
+- Base form: Show 🏠 base form line ONLY if the word form differs from base form (e.g. "running" → "run", "better" → "good"). Include example with base form.
 - Collocations: ONE most common phrase with the word
 - Synonyms/Antonyms: separate lines, one each
 - Example: NEW simple sentence (not the original one)
@@ -207,16 +208,20 @@ class KindleCardsGenerator:
 
     def generate_cards_batch(self, words_batch):
         """Генерирует карточки для батча через OpenAI API"""
-        # Формируем список слов с оригинальными контекстами
+        # Формируем список слов с оригинальными контекстами и базовыми формами
         words_list = []
         for item in words_batch:
             word = item['clean_word']
+            stem = item.get('stem', word)
             original_context = item.get('usage', '').strip()
 
+            word_info = f"- {word}"
+            if stem and stem.lower() != word.lower():
+                word_info += f"\n  Base form: {stem}"
             if original_context:
-                words_list.append(f"- {word}\n  Original context: \"{original_context}\"")
-            else:
-                words_list.append(f"- {word}")
+                word_info += f"\n  Original context: \"{original_context}\""
+            
+            words_list.append(word_info)
 
         words_text = "\n\n".join(words_list)
         user_prompt = f"Generate flashcards for these words with their original contexts:\n\n{words_text}"
