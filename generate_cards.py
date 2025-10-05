@@ -33,7 +33,8 @@ SYSTEM_PROMPT = """You are generating flashcards for a Russian speaker learning 
 OUTPUT FORMAT (front % back):
 <h3><b>word</b> <small>/pronunciation/</small></h3><p><i>"Original sentence with _____ blank."</i></p>%🇷🇺 <b>перевод / другой вариант перевода / ещё вариант перевода</b><br>🇬🇧 <i>short definition</i><br>📝 part of speech • <b>level</b> • ⭐ importance/10<br>🔗 common collocation<br>✅ synonym<br>❌ antonym<br>📖 <i>"Simple sentence example."</i><br>💡 <i>мнемоническая ассоциация на русском</i>
 
-RULES:
+CRITICAL FORMATTING RULES:
+- CARD SEPARATION: Use exactly TWO newlines (empty line) between cards, NEVER use <br> tags for card separation
 - Front: word + pronunciation + EXACT original sentence with word replaced by _____
 - Back: all info in single lines, no lists or complex formatting
 - Translation: context-appropriate Russian translation first, then add 2-3 alternative meanings separated by / if they exist
@@ -44,11 +45,11 @@ RULES:
 - Synonyms/Antonyms: separate lines, one each
 - Example: NEW simple sentence (not the original one)
 - Memory tip: Russian mnemonic association
-- Use only short HTML tags: b, i, small, br
-- Double newline between cards
+- HTML tags: ONLY use b, i, small, br for line breaks WITHIN back side content
+- NEVER use <br> tags to separate different cards - use TWO newlines only
 - Importance scale: * 9-10 = top 500 words (be, have, go, make, think, get, see) * 7-8 = top 3000 words (often, explain, create, remember) * 5-6 = common everyday words (coax, borough, persuade) * 3-4 = specialized but known (glower, stencil, squirm) * 1-2 = rare, technical, archaic
 
-OUTPUT ONLY THE CARDS."""
+OUTPUT ONLY THE CARDS. SEPARATE CARDS WITH EXACTLY TWO NEWLINES."""
 # ============================================================================
 
 
